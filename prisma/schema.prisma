@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  SALES_REP
+  SALES_MANAGER
+  INVENTORY_MANAGER
+  AR_ANALYST
+  PURCHASING_MANAGER
+  AP_ANALYST
+  ACCOUNTING_MANAGER
+  CEO_CFO
+}
+
+enum ItemType {
+  INVENTORY
+  NON_INVENTORY
+  SERVICE
+}
+
+enum CostingMethod {
+  FIFO
+  LIFO
+  AVERAGE
+  STANDARD
+}
+
+enum TaxSchedule {
+  TAXABLE
+  NON_TAXABLE
+}
+
+enum SalesOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PICKING
+  PACKING
+  SHIPPED
+  INVOICED
+  PAID
+}
+
+enum FulfillmentStatus {
+  PICKED
+  PACKED
+  SHIPPED
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_RECEIPT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  BILLED
+  PAID
+}
+
+enum VendorBillStatus {
+  PENDING_APPROVAL
+  APPROVED
+  PAID
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  salesOrdersCreated      SalesOrder[]          @relation("SalesOrderCreatedBy")
+  salesOrdersApproved     SalesOrder[]          @relation("SalesOrderApprovedBy")
+  purchaseOrdersCreated   PurchaseOrder[]       @relation("POCreatedBy")
+  purchaseOrdersApproved  PurchaseOrder[]       @relation("POApprovedBy")
+  invoicesCreated         Invoice[]
+  customerPaymentsCreated CustomerPayment[]
+  vendorBillsCreated      VendorBill[]
+  billPaymentsCreated     BillPayment[]
+  fulfillmentsCreated     ItemFulfillment[]
+  receiptsCreated         ItemReceipt[]
+  adjustmentsCreated      InventoryAdjustment[]
+  transfersCreated        InventoryTransfer[]
+}
+
+// ─── Item Management ─────────────────────────────────────────────────────────
+
+model Item {
+  id            String        @id @default(cuid())
+  name          String        @unique
+  displayName   String
+  itemType      ItemType
+  costingMethod CostingMethod @default(FIFO)
+  unitType      String        @default("Each")
+  taxSchedule   TaxSchedule   @default(TAXABLE)
+  stockQty      Int           @default(0)
+  department    String?
+  class         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  salesOrderItems    SalesOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  adjustments        InventoryAdjustment[]
+  transfers          InventoryTransfer[]
+  receipts           ItemReceipt[]
+}
+
+model Vendor {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  purchaseOrders PurchaseOrder[]
+  vendorBills    VendorBill[]
+  billPayments   BillPayment[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+
+  salesOrders SalesOrder[]
+  invoices    Invoice[]
+  payments    CustomerPayment[]
+}
+
+model InventoryAdjustment {
+  id        String   @id @default(cuid())
+  itemId    String
+  adjustQty Int
+  newQty    Int
+  memo      String?
+  date      DateTime @default(now())
+  createdBy String
+  createdAt DateTime @default(now())
+
+  item    Item @relation(fields: [itemId], references: [id])
+  creator User @relation(fields: [createdBy], references: [id])
+}
+
+model InventoryTransfer {
+  id           String   @id @default(cuid())
+  itemId       String
+  fromLocation String
+  toLocation   String
+  qty          Int
+  memo         String?
+  date         DateTime @default(now())
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  item    Item @relation(fields: [itemId], references: [id])
+  creator User @relation(fields: [createdBy], references: [id])
+}
+
+// ─── Order to Cash ───────────────────────────────────────────────────────────
+
+model SalesOrder {
+  id          String           @id @default(cuid())
+  orderNumber String           @unique
+  customerId  String
+  date        DateTime         @default(now())
+  location    String           @default("Main Warehouse")
+  currency    String           @default("USD")
+  memo        String?
+  status      SalesOrderStatus @default(DRAFT)
+  createdBy   String
+  approvedBy  String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  customer     Customer          @relation(fields: [customerId], references: [id])
+  creator      User              @relation("SalesOrderCreatedBy", fields: [createdBy], references: [id])
+  approver     User?             @relation("SalesOrderApprovedBy", fields: [approvedBy], references: [id])
+  items        SalesOrderItem[]
+  fulfillments ItemFulfillment[]
+  invoices     Invoice[]
+}
+
+model SalesOrderItem {
+  id           String  @id @default(cuid())
+  salesOrderId String
+  itemId       String
+  dept         String?
+  class        String?
+  priceLevel   String?
+  rate         Decimal @db.Decimal(12, 2)
+  quantity     Int
+  taxCode      String?
+  amount       Decimal @db.Decimal(12, 2)
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  item       Item       @relation(fields: [itemId], references: [id])
+}
+
+model ItemFulfillment {
+  id           String            @id @default(cuid())
+  salesOrderId String
+  status       FulfillmentStatus
+  date         DateTime          @default(now())
+  createdBy    String
+  createdAt    DateTime          @default(now())
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
+  creator    User       @relation(fields: [createdBy], references: [id])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  salesOrderId  String
+  customerId    String
+  date          DateTime      @default(now())
+  dueDate       DateTime
+  subtotal      Decimal       @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
+  status        InvoiceStatus @default(OPEN)
+  createdBy     String
+  createdAt     DateTime      @default(now())
+
+  salesOrder SalesOrder        @relation(fields: [salesOrderId], references: [id])
+  customer   Customer          @relation(fields: [customerId], references: [id])
+  creator    User              @relation(fields: [createdBy], references: [id])
+  payments   CustomerPayment[]
+}
+
+model CustomerPayment {
+  id            String   @id @default(cuid())
+  paymentNumber String   @unique
+  customerId    String
+  invoiceId     String
+  date          DateTime @default(now())
+  amount        Decimal  @db.Decimal(12, 2)
+  account       String   @default("Undeposited Funds")
+  arAccount     String   @default("Accounts Receivable")
+  memo          String?
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id])
+  creator  User     @relation(fields: [createdBy], references: [id])
+}
+
+// ─── Procure to Pay ──────────────────────────────────────────────────────────
+
+model PurchaseOrder {
+  id         String              @id @default(cuid())
+  poNumber   String              @unique
+  vendorId   String
+  date       DateTime            @default(now())
+  location   String              @default("Main Warehouse")
+  currency   String              @default("USD")
+  memo       String?
+  status     PurchaseOrderStatus @default(DRAFT)
+  createdBy  String
+  approvedBy String?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  vendor   Vendor              @relation(fields: [vendorId], references: [id])
+  creator  User                @relation("POCreatedBy", fields: [createdBy], references: [id])
+  approver User?               @relation("POApprovedBy", fields: [approvedBy], references: [id])
+  items    PurchaseOrderItem[]
+  receipts ItemReceipt[]
+  bills    VendorBill[]
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(cuid())
+  purchaseOrderId String
+  itemId          String
+  dept            String?
+  class           String?
+  rate            Decimal @db.Decimal(12, 2)
+  quantity        Int
+  amount          Decimal @db.Decimal(12, 2)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  item          Item          @relation(fields: [itemId], references: [id])
+}
+
+model ItemReceipt {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  itemId          String
+  qtyReceived     Int
+  date            DateTime @default(now())
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  item          Item          @relation(fields: [itemId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+}
+
+model VendorBill {
+  id              String           @id @default(cuid())
+  billNumber      String           @unique
+  vendorId        String
+  purchaseOrderId String?
+  date            DateTime         @default(now())
+  dueDate         DateTime
+  amount          Decimal          @db.Decimal(12, 2)
+  status          VendorBillStatus @default(PENDING_APPROVAL)
+  memo            String?
+  createdBy       String
+  createdAt       DateTime         @default(now())
+
+  vendor        Vendor         @relation(fields: [vendorId], references: [id])
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  creator       User           @relation(fields: [createdBy], references: [id])
+  payments      BillPayment[]
+}
+
+model BillPayment {
+  id            String   @id @default(cuid())
+  paymentNumber String   @unique
+  vendorId      String
+  billId        String
+  date          DateTime @default(now())
+  amount        Decimal  @db.Decimal(12, 2)
+  apAccount     String   @default("Accounts Payable")
+  account       String   @default("Checking")
+  memo          String?
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  vendor  Vendor     @relation(fields: [vendorId], references: [id])
+  bill    VendorBill @relation(fields: [billId], references: [id])
+  creator User       @relation(fields: [createdBy], references: [id])
+}

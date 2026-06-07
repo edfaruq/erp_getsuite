@@ -1,0 +1,52 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const schema = z.object({
+  itemId: z.string().min(1, "Item required"),
+  adjustQty: z.coerce.number().refine((v) => v !== 0, "Adjustment cannot be zero"),
+  memo: z.string().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
+
+interface AdjustFormProps {
+  items: { id: string; displayName: string; stockQty: number }[];
+  onSubmit: (data: FormData) => Promise<void>;
+}
+
+export function AdjustForm({ items, onSubmit }: AdjustFormProps) {
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-lg">
+      <div className="space-y-2">
+        <Label>Item</Label>
+        <select {...register("itemId")} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <option value="">Select item...</option>
+          {items.map((i) => (
+            <option key={i.id} value={i.id}>{i.displayName} (On Hand: {i.stockQty})</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label>Adjustment Qty (+/-)</Label>
+        <Input type="number" {...register("adjustQty")} placeholder="e.g. -5 or +10" />
+      </div>
+      <div className="space-y-2">
+        <Label>Memo</Label>
+        <Input {...register("memo")} placeholder="Reason for adjustment..." />
+      </div>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : "Adjust Inventory"}
+      </Button>
+    </form>
+  );
+}
