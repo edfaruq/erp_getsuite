@@ -11,6 +11,18 @@ export interface Item {
   unitType: string;
   taxSchedule: TaxSchedule;
   stockQty: number;
+  reorderPoint?: number;
+  warehouseId?: string;
+  warehouseName?: string;
+  vendorName?: string;
+  location?: string;
+  primaryStockUnit?: string;
+  primaryPurchaseUnit?: string;
+  primarySaleUnit?: string;
+  cogsAccount?: string;
+  assetAccount?: string;
+  incomeAccount?: string;
+  expenseAccount?: string;
   department?: string;
   class?: string;
   createdAt: string;
@@ -25,6 +37,17 @@ export interface CreateItemInput {
   unitType?: string;
   taxSchedule?: TaxSchedule;
   stockQty?: number;
+  reorderPoint?: number;
+  warehouseId?: string;
+  vendorName?: string;
+  location?: string;
+  primaryStockUnit?: string;
+  primaryPurchaseUnit?: string;
+  primarySaleUnit?: string;
+  cogsAccount?: string;
+  assetAccount?: string;
+  incomeAccount?: string;
+  expenseAccount?: string;
   department?: string;
   class?: string;
 }

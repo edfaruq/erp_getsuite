@@ -23,7 +23,7 @@ export default function TransferPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
 
   const fetchData = () => {
-    fetch("/api/inventory/items").then((r) => r.json()).then((d) => setItems(d.data ?? []));
+    fetch("/api/inventory/items?itemType=INVENTORY").then((r) => r.json()).then((d) => setItems(d.data ?? []));
     fetch("/api/inventory/transfer").then((r) => r.json()).then((d) => setTransfers(d.data ?? []));
   };
 

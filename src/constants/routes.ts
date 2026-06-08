@@ -24,6 +24,7 @@ export const ROUTES = {
   apKpi: "/ap-kpi",
   items: "/items",
   itemsNew: (type?: string) => (type ? `/items/new?type=${type}` : "/items/new"),
+  warehouses: "/warehouses",
   adjust: "/adjust",
   transfer: "/transfer",
   itemStrategy: "/item-strategy",

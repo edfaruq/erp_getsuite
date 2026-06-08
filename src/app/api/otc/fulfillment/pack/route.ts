@@ -6,7 +6,10 @@ export async function GET() {
   try {
     const orders = await prisma.salesOrder.findMany({
       where: { status: "PICKING" },
-      include: { customer: true },
+      include: {
+        customer: true,
+        items: { include: { item: true } },
+      },
     });
     return NextResponse.json({ data: orders });
   } catch {

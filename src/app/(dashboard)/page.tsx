@@ -5,7 +5,7 @@ import {
   ShoppingCart, Plus, CheckCircle, Package, Archive, Truck, Download,
   Box, RefreshCw, ArrowLeftRight, BarChart, BarChart2, FileText, DollarSign,
   ClipboardList, Receipt, Users, PlusSquare, TrendingUp, TrendingDown,
-  Settings, Settings2, ArrowRight,
+  Settings, Settings2, ArrowRight, Warehouse,
 } from "lucide-react";
 import { useRoleStore } from "@/store/role.store";
 import { ROLE_LABELS, ROLE_COLORS } from "@/constants/roles";
@@ -18,7 +18,7 @@ const ICON_MAP: Record<MenuIcon, React.ComponentType<{ className?: string }>> = 
   ShoppingCart, Plus, CheckCircle, Package, Archive, Truck, Download,
   Box, RefreshCw, ArrowLeftRight, BarChart, BarChart2, FileText, DollarSign,
   ClipboardList, Receipt, LayoutDashboard: BarChart, Users, PlusSquare,
-  TrendingUp, TrendingDown, Settings, Settings2,
+  TrendingUp, TrendingDown, Settings, Settings2, Warehouse,
 };
 
 const QUICK_LINK_PALETTE = [

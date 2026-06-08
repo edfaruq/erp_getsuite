@@ -24,7 +24,8 @@ export type MenuIcon =
   | "TrendingUp"
   | "TrendingDown"
   | "Settings"
-  | "Settings2";
+  | "Settings2"
+  | "Warehouse";
 
 export interface MenuItem {
   label: string;
@@ -55,6 +56,7 @@ export const ROLE_MENUS: Record<AppRole, MenuItem[]> = {
     { label: "Pack Orders", href: ROUTES.pack, icon: "Archive" },
     { label: "Ship Orders", href: ROUTES.ship, icon: "Truck" },
     { label: "Receive PO", href: ROUTES.receive, icon: "Download" },
+    { label: "Warehouses", href: ROUTES.warehouses, icon: "Warehouse" },
     { label: "Items", href: ROUTES.items, icon: "Box" },
     { label: "Adjust Inventory", href: ROUTES.adjust, icon: "RefreshCw" },
     { label: "Transfer Inventory", href: ROUTES.transfer, icon: "ArrowLeftRight" },

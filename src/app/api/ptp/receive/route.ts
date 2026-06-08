@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUserId } from "@/lib/actor";
+import {
+  computePurchaseOrderStatus,
+  incrementWarehouseStock,
+  resolveWarehouse,
+} from "@/lib/inventory/stock";
 
 export async function GET() {
   try {
@@ -27,15 +32,39 @@ export async function POST(req: NextRequest) {
     const poItem = po.items.find((i) => i.itemId === itemId);
     if (!poItem) return NextResponse.json({ error: "Item not on PO" }, { status: 400 });
 
-    const totalReceived = po.receipts.filter((r) => r.itemId === itemId).reduce((s, r) => s + r.qtyReceived, 0) + qtyReceived;
-    const nextStatus = totalReceived >= poItem.quantity ? "RECEIVED" : "PARTIALLY_RECEIVED";
+    const alreadyReceived = po.receipts
+      .filter((r) => r.itemId === itemId)
+      .reduce((s, r) => s + r.qtyReceived, 0);
+    const remaining = poItem.quantity - alreadyReceived;
 
-    const [receipt, updatedPO, updatedItem] = await prisma.$transaction([
+    if (qtyReceived <= 0 || qtyReceived > remaining) {
+      return NextResponse.json(
+        { error: `Invalid quantity (remaining: ${remaining})` },
+        { status: 400 }
+      );
+    }
+
+    const warehouse = await resolveWarehouse(po.location);
+    const updatedReceipts = [
+      ...po.receipts,
+      { itemId, qtyReceived, purchaseOrderId, date: new Date(), createdBy, id: "", createdAt: new Date() },
+    ];
+    const nextStatus = computePurchaseOrderStatus(po.items, updatedReceipts);
+
+    const [receipt, updatedPO] = await prisma.$transaction([
       prisma.itemReceipt.create({ data: { purchaseOrderId, itemId, qtyReceived, createdBy } }),
       prisma.purchaseOrder.update({ where: { id: purchaseOrderId }, data: { status: nextStatus } }),
-      prisma.item.update({ where: { id: itemId }, data: { stockQty: { increment: qtyReceived } } }),
     ]);
 
+    const poItemRecord = po.items.find((i) => i.itemId === itemId);
+    if (poItemRecord) {
+      const item = await prisma.item.findUnique({ where: { id: itemId } });
+      if (item?.itemType === "INVENTORY") {
+        await incrementWarehouseStock(itemId, warehouse.id, qtyReceived);
+      }
+    }
+
+    const updatedItem = await prisma.item.findUnique({ where: { id: itemId } });
     return NextResponse.json({ data: { receipt, order: updatedPO, item: updatedItem } });
   } catch {
     return NextResponse.json({ error: "Failed to receive items" }, { status: 500 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,6 +23,8 @@ const baseSchema = z.object({
   costingMethod: z.enum(["FIFO", "LIFO", "AVERAGE", "STANDARD"]).optional(),
   taxSchedule: z.enum(["TAXABLE", "NON_TAXABLE"]).optional(),
   stockQty: z.coerce.number().optional(),
+  reorderPoint: z.coerce.number().optional(),
+  warehouseId: z.string().optional(),
   cogsAccount: z.string().optional(),
   assetAccount: z.string().optional(),
   incomeAccount: z.string().optional(),
@@ -35,6 +37,7 @@ export type ItemFormVariant = "INVENTORY" | "NON_INVENTORY" | "SERVICE";
 
 interface ItemFormProps {
   variant: ItemFormVariant;
+  mode?: "create" | "edit";
   onSubmit: (data: FormData) => Promise<void>;
   defaultValues?: Partial<FormData>;
 }
@@ -51,8 +54,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
-export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
-  const router = useRouter();
+export function ItemForm({ variant, mode = "create", onSubmit, defaultValues }: ItemFormProps) {
+  const [warehouses, setWarehouses] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/inventory/warehouses")
+      .then((r) => r.json())
+      .then((d) => setWarehouses(d.data ?? []));
+  }, []);
+
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(baseSchema),
     defaultValues: {
@@ -61,6 +71,7 @@ export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
       unitType: "Each",
       taxSchedule: variant === "SERVICE" ? "NON_TAXABLE" : "TAXABLE",
       stockQty: 0,
+      reorderPoint: 5,
       primaryStockUnit: "Each",
       primaryPurchaseUnit: "Each",
       primarySaleUnit: "Each",
@@ -82,7 +93,7 @@ export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Item Number">
-          <Input {...register("name")} placeholder="SKU-001" />
+          <Input {...register("name")} placeholder="SKU-001" readOnly={mode === "edit"} />
         </Field>
         <Field label="Display Name">
           <Input {...register("displayName")} />
@@ -100,9 +111,21 @@ export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
         <Field label="Class">
           <Input {...register("class")} />
         </Field>
-        <Field label="Location">
-          <Input {...register("location")} />
-        </Field>
+        {variant === "INVENTORY" && warehouses.length > 0 && (
+          <Field label="Warehouse">
+            <select {...register("warehouseId")} className={selectClass}>
+              <option value="">Default warehouse</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          </Field>
+        )}
+        {variant !== "INVENTORY" && (
+          <Field label="Location">
+            <Input {...register("location")} />
+          </Field>
+        )}
         <Field label="Unit Type">
           <Input {...register("unitType")} />
         </Field>
@@ -128,6 +151,9 @@ export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
             </Field>
             <Field label="Initial Stock Qty">
               <Input type="number" {...register("stockQty")} />
+            </Field>
+            <Field label="Reorder Point">
+              <Input type="number" {...register("reorderPoint")} />
             </Field>
             <Field label="COGS Account">
               <Input {...register("cogsAccount")} placeholder="5000 Cost of Goods Sold" />
@@ -179,17 +205,8 @@ export function ItemForm({ variant, onSubmit, defaultValues }: ItemFormProps) {
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : `Save ${titles[variant]}`}
+          {isSubmitting ? "Saving..." : mode === "edit" ? "Save Changes" : `Save ${titles[variant]}`}
         </Button>
-        {variant === "NON_INVENTORY" && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push("/items/new?type=INVENTORY")}
-          >
-            Convert to Inventory
-          </Button>
-        )}
       </div>
     </form>
   );
