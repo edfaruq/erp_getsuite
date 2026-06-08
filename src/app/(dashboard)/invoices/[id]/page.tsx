@@ -11,10 +11,7 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
-    fetch("/api/otc/invoices").then((r) => r.json()).then((d) => {
-      const found = (d.data ?? []).find((inv: Invoice) => inv.id === id);
-      setInvoice(found ?? null);
-    });
+    fetch(`/api/otc/invoices/${id}`).then((r) => r.json()).then((d) => setInvoice(d.data ?? null));
   }, [id]);
 
   if (!invoice) return <div className="text-muted-foreground">Loading...</div>;

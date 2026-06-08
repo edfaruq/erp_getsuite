@@ -32,18 +32,17 @@ interface SalesOrderFormProps {
 }
 
 export function SalesOrderForm({ customers, items, onSubmit }: SalesOrderFormProps) {
-  const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, control, handleSubmit, getValues, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { location: "Main Warehouse", items: [{ itemId: "", rate: 0, quantity: 1, amount: 0 }] },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-  const watchItems = watch("items");
 
-  const updateAmount = (index: number) => {
-    const rate = watchItems[index]?.rate ?? 0;
-    const qty = watchItems[index]?.quantity ?? 0;
-    setValue(`items.${index}.amount`, rate * qty);
+  const recalcAmount = (index: number, rate?: number, qty?: number) => {
+    const r = rate ?? (Number(getValues(`items.${index}.rate`)) || 0);
+    const q = qty ?? (Number(getValues(`items.${index}.quantity`)) || 0);
+    setValue(`items.${index}.amount`, r * q);
   };
 
   return (
@@ -86,11 +85,24 @@ export function SalesOrderForm({ customers, items, onSubmit }: SalesOrderFormPro
               </div>
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Rate</Label>
-                <Input type="number" step="0.01" {...register(`items.${index}.rate`)} onChange={() => updateAmount(index)} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...register(`items.${index}.rate`, {
+                    valueAsNumber: true,
+                    onChange: (e) => recalcAmount(index, Number(e.target.value) || 0),
+                  })}
+                />
               </div>
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Qty</Label>
-                <Input type="number" {...register(`items.${index}.quantity`)} onChange={() => updateAmount(index)} />
+                <Input
+                  type="number"
+                  {...register(`items.${index}.quantity`, {
+                    valueAsNumber: true,
+                    onChange: (e) => recalcAmount(index, undefined, Number(e.target.value) || 0),
+                  })}
+                />
               </div>
               <div className="col-span-3 space-y-1">
                 <Label className="text-xs">Amount</Label>

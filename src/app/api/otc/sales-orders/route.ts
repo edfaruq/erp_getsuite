@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         location: body.location ?? "Main Warehouse",
         currency: body.currency ?? "USD",
         memo: body.memo,
-        status: "DRAFT",
+        status: "PENDING_APPROVAL",
         createdBy,
         items: {
           create: body.items.map((item: { itemId: string; dept?: string; class?: string; priceLevel?: string; rate: number; quantity: number; taxCode?: string; amount: number }) => ({

@@ -1,20 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InvoiceCreateForm } from "@/components/otc/InvoiceCreateForm";
+import { useInvoices } from "@/hooks/otc/useInvoices";
+import { useSalesOrders } from "@/hooks/otc/useSalesOrders";
+import { useRoleStore } from "@/store/role.store";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Invoice } from "@/types/otc.types";
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const activeRole = useRoleStore((s) => s.activeRole);
+  const { invoices, loading, refetch } = useInvoices();
+  const { orders: shippedOrders, refetch: refetchOrders } = useSalesOrders("SHIPPED");
 
-  useEffect(() => {
-    fetch("/api/otc/invoices").then((r) => r.json()).then((d) => { setInvoices(d.data ?? []); setLoading(false); });
-  }, []);
+  const handleCreateInvoice = async (data: { salesOrderId: string; customerId: string; dueDate: string }) => {
+    const res = await fetch("/api/otc/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, createdBy: activeRole }),
+    });
+    if (res.ok) {
+      refetch();
+      refetchOrders();
+    }
+  };
 
   const columns: Column<Invoice>[] = [
     { key: "invoiceNumber", header: "Invoice #", render: (r) => <Link href={`/invoices/${r.id}`} className="text-primary hover:underline">{r.invoiceNumber}</Link> },
@@ -28,6 +40,7 @@ export default function InvoicesPage() {
   return (
     <div>
       <PageHeader title="Invoices" description="Manage customer invoices and billing." />
+      <InvoiceCreateForm orders={shippedOrders} onSubmit={handleCreateInvoice} />
       {loading ? <p className="text-muted-foreground">Loading...</p> : <DataTable columns={columns} data={invoices} keyField="id" />}
     </div>
   );
