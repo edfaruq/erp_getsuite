@@ -38,7 +38,7 @@ export default function VendorDetailPage() {
           <CardContent className="space-y-2">
             {purchaseOrders.length === 0 ? <p className="text-sm text-muted-foreground">No purchase orders.</p> : purchaseOrders.map((po) => (
               <div key={po.id} className="flex justify-between text-sm border-b pb-2">
-                <Link href="/purchase-orders" className="text-primary hover:underline">{po.poNumber}</Link>
+                <Link href={`/purchase-orders/${po.id}`} className="text-primary hover:underline">{po.poNumber}</Link>
                 <span className="text-muted-foreground">{po.status}</span>
               </div>
             ))}

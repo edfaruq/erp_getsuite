@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUserId } from "@/lib/actor";
+import { canTransitionPTP } from "@/constants/status";
 
 export async function GET() {
   try {
@@ -40,7 +41,10 @@ export async function POST(req: NextRequest) {
       });
       await tx.vendorBill.update({ where: { id: billId }, data: { status: "PAID" } });
       if (bill.purchaseOrderId) {
-        await tx.purchaseOrder.update({ where: { id: bill.purchaseOrderId }, data: { status: "PAID" } });
+        const po = await tx.purchaseOrder.findUnique({ where: { id: bill.purchaseOrderId } });
+        if (po && canTransitionPTP(po.status as never, "PAID")) {
+          await tx.purchaseOrder.update({ where: { id: bill.purchaseOrderId }, data: { status: "PAID" } });
+        }
       }
       return p;
     });

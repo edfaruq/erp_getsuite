@@ -61,3 +61,30 @@ export interface BillPayment {
   account: string;
   memo?: string;
 }
+
+export interface Vendor {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  poCount?: number;
+  billCount?: number;
+}
+
+export interface CreateBillInput {
+  vendorId: string;
+  purchaseOrderId?: string;
+  dueDate: string;
+  amount: number;
+  memo?: string;
+}
+
+export interface CreateBillPaymentInput {
+  vendorId: string;
+  billId: string;
+  amount: number;
+  apAccount?: string;
+  account?: string;
+  memo?: string;
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUserId } from "@/lib/actor";
+import { canTransitionPTP } from "@/constants/status";
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,18 +29,42 @@ export async function POST(req: NextRequest) {
   try {
     const { vendorId, purchaseOrderId, dueDate, amount, memo, createdBy: actor } = await req.json();
     const createdBy = await resolveUserId(actor);
+    if (purchaseOrderId) {
+      const po = await prisma.purchaseOrder.findUnique({
+        where: { id: purchaseOrderId },
+        include: { bills: true },
+      });
+      if (!po) return NextResponse.json({ error: "Purchase order not found" }, { status: 404 });
+      if (!canTransitionPTP(po.status as never, "BILLED")) {
+        return NextResponse.json({ error: `PO must be RECEIVED to bill (current: ${po.status})` }, { status: 400 });
+      }
+      if (po.bills.some((b) => b.status !== "PAID")) {
+        return NextResponse.json({ error: "PO already has an open bill" }, { status: 400 });
+      }
+    }
+
     const count = await prisma.vendorBill.count();
-    const bill = await prisma.vendorBill.create({
-      data: {
-        billNumber: `BILL-${String(count + 40001)}`,
-        vendorId,
-        purchaseOrderId: purchaseOrderId || null,
-        dueDate: new Date(dueDate),
-        amount,
-        memo,
-        status: "PENDING_APPROVAL",
-        createdBy,
-      },
+    const bill = await prisma.$transaction(async (tx) => {
+      const created = await tx.vendorBill.create({
+        data: {
+          billNumber: `BILL-${String(count + 40001)}`,
+          vendorId,
+          purchaseOrderId: purchaseOrderId || null,
+          dueDate: new Date(dueDate),
+          amount,
+          memo,
+          status: "PENDING_APPROVAL",
+          createdBy,
+        },
+        include: { vendor: true, purchaseOrder: true },
+      });
+      if (purchaseOrderId) {
+        await tx.purchaseOrder.update({
+          where: { id: purchaseOrderId },
+          data: { status: "BILLED" },
+        });
+      }
+      return created;
     });
     return NextResponse.json({ data: bill }, { status: 201 });
   } catch {

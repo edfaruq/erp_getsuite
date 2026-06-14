@@ -27,8 +27,20 @@ export async function POST(req: NextRequest) {
     const poItem = po.items.find((i) => i.itemId === itemId);
     if (!poItem) return NextResponse.json({ error: "Item not on PO" }, { status: 400 });
 
-    const totalReceived = po.receipts.filter((r) => r.itemId === itemId).reduce((s, r) => s + r.qtyReceived, 0) + qtyReceived;
-    const nextStatus = totalReceived >= poItem.quantity ? "RECEIVED" : "PARTIALLY_RECEIVED";
+    const priorReceived = po.receipts.filter((r) => r.itemId === itemId).reduce((s, r) => s + r.qtyReceived, 0);
+    if (priorReceived + qtyReceived > poItem.quantity) {
+      return NextResponse.json({ error: "Quantity exceeds ordered amount" }, { status: 400 });
+    }
+
+    const receiptTotals = new Map<string, number>();
+    for (const r of po.receipts) {
+      receiptTotals.set(r.itemId, (receiptTotals.get(r.itemId) ?? 0) + r.qtyReceived);
+    }
+    receiptTotals.set(itemId, (receiptTotals.get(itemId) ?? 0) + qtyReceived);
+
+    const allFullyReceived = po.items.every((item) => (receiptTotals.get(item.itemId) ?? 0) >= item.quantity);
+    const anyReceived = po.items.some((item) => (receiptTotals.get(item.itemId) ?? 0) > 0);
+    const nextStatus = allFullyReceived ? "RECEIVED" : anyReceived ? "PARTIALLY_RECEIVED" : po.status;
 
     const [receipt, updatedPO, updatedItem] = await prisma.$transaction([
       prisma.itemReceipt.create({ data: { purchaseOrderId, itemId, qtyReceived, createdBy } }),
