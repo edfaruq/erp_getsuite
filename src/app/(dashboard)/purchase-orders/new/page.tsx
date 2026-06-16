@@ -6,13 +6,15 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { PurchaseOrderForm } from "@/components/ptp/PurchaseOrderForm";
 import { useRoleStore } from "@/store/role.store";
 import { useVendors } from "@/hooks/ptp/useVendors";
+import { useToastStore } from "@/store/toast.store";
 
 export default function NewPurchaseOrderPage() {
   const router = useRouter();
   const activeRole = useRoleStore((s) => s.activeRole);
   const { vendors, loading: vendorsLoading } = useVendors();
-  const [items, setItems] = useState<{ id: string; displayName: string }[]>([]);
+  const [items, setItems] = useState<{ id: string; displayName: string; purchaseRate?: number | null }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const showToast = useToastStore((s) => s.showToast);
 
   useEffect(() => {
     fetch("/api/inventory/items").then((r) => r.json()).then((d) => setItems(d.data ?? []));
@@ -27,10 +29,13 @@ export default function NewPurchaseOrderPage() {
     });
     if (res.ok) {
       const result = await res.json();
+      showToast("Purchase Order created successfully!");
       router.push(`/purchase-orders/${result.data.id}`);
     } else {
       const result = await res.json();
-      setError(result.error ?? "Failed to create purchase order");
+      const msg = result.error ?? "Failed to create purchase order";
+      setError(msg);
+      showToast(msg, "error");
     }
   };
 

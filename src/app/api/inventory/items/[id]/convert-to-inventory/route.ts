@@ -20,6 +20,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         ? await prisma.warehouse.findUnique({ where: { id: body.warehouseId } })
         : null) ?? (await getDefaultWarehouse());
 
+    if (!warehouse) {
+      return NextResponse.json({ error: "No active warehouse configured. Please create a warehouse first." }, { status: 400 });
+    }
+
     const stockQty = Number(body.stockQty ?? 0);
     const reorderPoint = Number(body.reorderPoint ?? 5);
 

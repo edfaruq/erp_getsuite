@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
     }
 
     const warehouse = await resolveWarehouse(po.location);
+    if (!warehouse) {
+      return NextResponse.json({ error: "No active warehouse configured" }, { status: 400 });
+    }
+
     const updatedReceipts = [
       ...po.receipts,
       { itemId, qtyReceived, purchaseOrderId, date: new Date(), createdBy, id: "", createdAt: new Date() },

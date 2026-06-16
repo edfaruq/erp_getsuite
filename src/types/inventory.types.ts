@@ -23,6 +23,8 @@ export interface Item {
   assetAccount?: string;
   incomeAccount?: string;
   expenseAccount?: string;
+  purchaseRate?: number | null;
+  saleRate?: number | null;
   department?: string;
   class?: string;
   createdAt: string;
@@ -48,6 +50,8 @@ export interface CreateItemInput {
   assetAccount?: string;
   incomeAccount?: string;
   expenseAccount?: string;
+  purchaseRate?: number | null;
+  saleRate?: number | null;
   department?: string;
   class?: string;
 }

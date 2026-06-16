@@ -5,12 +5,10 @@ export async function getWarehouseByName(name: string) {
 }
 
 export async function getDefaultWarehouse() {
-  const warehouse = await prisma.warehouse.findFirst({
+  return prisma.warehouse.findFirst({
     where: { isActive: true },
     orderBy: { createdAt: "asc" },
   });
-  if (!warehouse) throw new Error("No active warehouse configured");
-  return warehouse;
 }
 
 export async function resolveWarehouse(location?: string | null) {

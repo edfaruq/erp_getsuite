@@ -32,6 +32,8 @@ export function buildItemCreateData(body: ItemBody) {
     expenseAccount: str(body.expenseAccount),
     department: str(body.department),
     class: str(body.class),
+    purchaseRate: body.purchaseRate != null ? Number(body.purchaseRate) : undefined,
+    saleRate: body.saleRate != null ? Number(body.saleRate) : undefined,
   };
 }
 
@@ -63,6 +65,12 @@ export function buildItemUpdateData(body: ItemBody) {
 
   if (body.reorderPoint !== undefined) {
     data.reorderPoint = Number(body.reorderPoint);
+  }
+  if (body.purchaseRate !== undefined) {
+    data.purchaseRate = Number(body.purchaseRate);
+  }
+  if (body.saleRate !== undefined) {
+    data.saleRate = Number(body.saleRate);
   }
 
   return data;

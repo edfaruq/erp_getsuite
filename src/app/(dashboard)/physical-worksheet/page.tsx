@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRoleStore } from "@/store/role.store";
+import { useToastStore } from "@/store/toast.store";
 import { Badge } from "@/components/ui/badge";
 
 interface WorksheetRow {
@@ -21,6 +22,7 @@ interface WorksheetRow {
 
 export default function PhysicalWorksheetPage() {
   const activeRole = useRoleStore((s) => s.activeRole);
+  const showToast = useToastStore((s) => s.showToast);
   const [sessionId, setSessionId] = useState("");
   const [status, setStatus] = useState("DRAFT");
   const [rows, setRows] = useState<WorksheetRow[]>([]);
@@ -68,10 +70,14 @@ export default function PhysicalWorksheetPage() {
     const json = await res.json();
     setSaving(false);
     if (!res.ok) {
-      setMessage(json.error ?? "Failed to save");
+      const msg = json.error ?? "Failed to save";
+      setMessage(msg);
+      showToast(msg, "error");
       return;
     }
-    setMessage(submit ? "Worksheet submitted. Variances applied as adjustments." : "Counts saved.");
+    const successMsg = submit ? "Worksheet submitted. Variances applied as adjustments." : "Counts saved.";
+    setMessage(successMsg);
+    showToast(successMsg);
     setSessionId(json.sessionId ?? sessionId);
     setStatus(json.status ?? status);
     setRows(json.data ?? rows);

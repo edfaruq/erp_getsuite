@@ -6,6 +6,7 @@ import { AdjustForm } from "@/components/inventory/AdjustForm";
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { formatDate } from "@/lib/utils";
 import { useRoleStore } from "@/store/role.store";
+import { useToastStore } from "@/store/toast.store";
 
 interface Adjustment {
   id: string;
@@ -18,6 +19,7 @@ interface Adjustment {
 
 export default function AdjustPage() {
   const activeRole = useRoleStore((s) => s.activeRole);
+  const showToast = useToastStore((s) => s.showToast);
   const [items, setItems] = useState<{ id: string; displayName: string; stockQty: number }[]>([]);
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
 
@@ -29,11 +31,17 @@ export default function AdjustPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleSubmit = async (data: { itemId: string; adjustQty: number; memo?: string }) => {
-    await fetch("/api/inventory/adjust", {
+    const res = await fetch("/api/inventory/adjust", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...data, createdBy: activeRole }),
     });
+    if (res.ok) {
+      showToast("Inventory adjusted successfully!");
+    } else {
+      const json = await res.json();
+      showToast(json.error ?? "Failed to adjust inventory", "error");
+    }
     fetchData();
   };
 

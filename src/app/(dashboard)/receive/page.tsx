@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRoleStore } from "@/store/role.store";
+import { useToastStore } from "@/store/toast.store";
 
 interface POLine {
   itemId: string;
@@ -21,6 +22,7 @@ interface POReceipt {
 
 export default function ReceivePage() {
   const activeRole = useRoleStore((s) => s.activeRole);
+  const showToast = useToastStore((s) => s.showToast);
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [qtyInputs, setQtyInputs] = useState<Record<string, number>>({});
@@ -44,7 +46,13 @@ export default function ReceivePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ purchaseOrderId: poId, itemId, qtyReceived: qty, createdBy: activeRole }),
     });
-    if (res.ok) fetchOrders();
+    if (res.ok) {
+      showToast("Items received successfully!");
+      fetchOrders();
+    } else {
+      const json = await res.json();
+      showToast(json.error ?? "Failed to receive items", "error");
+    }
   };
 
   return (

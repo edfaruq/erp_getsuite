@@ -1,8 +1,9 @@
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,23 +28,43 @@ type FormData = z.infer<typeof schema>;
 
 interface PurchaseOrderFormProps {
   vendors: { id: string; name: string }[];
-  items: { id: string; displayName: string }[];
+  items: { id: string; displayName: string; purchaseRate?: number | null }[];
   onSubmit: (data: FormData) => Promise<void>;
 }
 
 export function PurchaseOrderForm({ vendors, items, onSubmit }: PurchaseOrderFormProps) {
-  const { register, control, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm<FormData>({
+  const { register, control, handleSubmit, getValues, setValue, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { location: "Main Warehouse", items: [{ itemId: "", rate: 0, quantity: 1, amount: 0 }] },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-  const watchItems = watch("items");
+
+  // Watch all itemId values to detect changes
+  const watchedLines = useWatch({ control, name: "items" });
+  const prevItemIds = useRef<string[]>([]);
+
+  useEffect(() => {
+    watchedLines.forEach((line, index) => {
+      const currentId = line.itemId ?? "";
+      const prevId = prevItemIds.current[index] ?? "";
+      if (currentId && currentId !== prevId) {
+        const selected = items.find((i) => i.id === currentId);
+        const rate = Number(selected?.purchaseRate ?? 0);
+        if (rate > 0) {
+          setValue(`items.${index}.rate`, rate, { shouldDirty: true });
+          const qty = Number(line.quantity ?? 1);
+          setValue(`items.${index}.amount`, rate * qty, { shouldDirty: true });
+        }
+      }
+    });
+    prevItemIds.current = watchedLines.map((l) => l.itemId ?? "");
+  }, [watchedLines, items, setValue]);
 
   const updateAmount = (index: number) => {
-    const rate = watchItems[index]?.rate ?? 0;
-    const qty = watchItems[index]?.quantity ?? 0;
-    setValue(`items.${index}.amount`, rate * qty);
+    const rate = Number(getValues(`items.${index}.rate`) ?? 0);
+    const qty = Number(getValues(`items.${index}.quantity`) ?? 0);
+    setValue(`items.${index}.amount`, rate * qty, { shouldDirty: true });
   };
 
   return (
@@ -78,18 +99,25 @@ export function PurchaseOrderForm({ vendors, items, onSubmit }: PurchaseOrderFor
             <div key={field.id} className="grid grid-cols-12 gap-2 items-end">
               <div className="col-span-4 space-y-1">
                 <Label className="text-xs">Item</Label>
-                <select {...register(`items.${index}.itemId`)} className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+                <select
+                  {...register(`items.${index}.itemId`)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
                   <option value="">Select...</option>
-                  {items.map((i) => <option key={i.id} value={i.id}>{i.displayName}</option>)}
+                  {items.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.displayName}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Rate</Label>
-                <Input type="number" step="0.01" {...register(`items.${index}.rate`)} onChange={() => updateAmount(index)} />
+                <Input type="number" step="0.01" {...register(`items.${index}.rate`)} onBlur={() => updateAmount(index)} />
               </div>
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Qty</Label>
-                <Input type="number" {...register(`items.${index}.quantity`)} onChange={() => updateAmount(index)} />
+                <Input type="number" {...register(`items.${index}.quantity`)} onBlur={() => updateAmount(index)} />
               </div>
               <div className="col-span-3 space-y-1">
                 <Label className="text-xs">Amount</Label>

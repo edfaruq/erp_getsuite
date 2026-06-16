@@ -131,42 +131,42 @@ async function main() {
     prisma.item.upsert({
       where: { name: "IPAD-PRO-97-32GB" },
       update: {},
-      create: { name: "IPAD-PRO-97-32GB", displayName: "iPad Pro 9.7 inch - 32GB", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 45, reorderPoint: 10, warehouseId: mainWarehouse.id, department: "Electronics", class: "Tablets" },
+      create: { name: "IPAD-PRO-97-32GB", displayName: "iPad Pro 9.7 inch - 32GB", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 45, reorderPoint: 10, warehouseId: mainWarehouse.id, purchaseRate: 499.99, saleRate: 649.99, department: "Electronics", class: "Tablets" },
     }),
     prisma.item.upsert({
       where: { name: "BROCADE-7800-SW" },
       update: {},
-      create: { name: "BROCADE-7800-SW", displayName: "Brocade 7800 Extension Switch", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 12, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Networking", class: "Switches" },
+      create: { name: "BROCADE-7800-SW", displayName: "Brocade 7800 Extension Switch", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 12, reorderPoint: 5, warehouseId: mainWarehouse.id, purchaseRate: 9800.00, saleRate: 12500.00, department: "Networking", class: "Switches" },
     }),
     prisma.item.upsert({
       where: { name: "MACBOOK-PRO-M3" },
       update: {},
-      create: { name: "MACBOOK-PRO-M3", displayName: "MacBook Pro 14\" M3", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 28, reorderPoint: 8, warehouseId: mainWarehouse.id, department: "Electronics", class: "Laptops" },
+      create: { name: "MACBOOK-PRO-M3", displayName: "MacBook Pro 14\" M3", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 28, reorderPoint: 8, warehouseId: mainWarehouse.id, purchaseRate: 1599.99, saleRate: 1999.99, department: "Electronics", class: "Laptops" },
     }),
     prisma.item.upsert({
       where: { name: "CISCO-2960-SW" },
       update: {},
-      create: { name: "CISCO-2960-SW", displayName: "Cisco Catalyst 2960 Switch", itemType: "INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 3, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Networking", class: "Switches" },
+      create: { name: "CISCO-2960-SW", displayName: "Cisco Catalyst 2960 Switch", itemType: "INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 3, reorderPoint: 5, warehouseId: mainWarehouse.id, purchaseRate: 2500.00, saleRate: 3200.00, department: "Networking", class: "Switches" },
     }),
     prisma.item.upsert({
       where: { name: "IT-CONSULT-HR" },
       update: {},
-      create: { name: "IT-CONSULT-HR", displayName: "IT Consulting - Hourly", itemType: "SERVICE", costingMethod: "STANDARD", unitType: "Hour", taxSchedule: "TAXABLE", stockQty: 0, department: "Services", class: "Consulting" },
+      create: { name: "IT-CONSULT-HR", displayName: "IT Consulting - Hourly", itemType: "SERVICE", costingMethod: "STANDARD", unitType: "Hour", taxSchedule: "TAXABLE", stockQty: 0, purchaseRate: 0, saleRate: 150.00, department: "Services", class: "Consulting" },
     }),
     prisma.item.upsert({
       where: { name: "SHIPPING-HANDLING" },
       update: {},
-      create: { name: "SHIPPING-HANDLING", displayName: "Shipping & Handling Fee", itemType: "NON_INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "NON_TAXABLE", stockQty: 0, department: "Logistics", class: "Fees" },
+      create: { name: "SHIPPING-HANDLING", displayName: "Shipping & Handling Fee", itemType: "NON_INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "NON_TAXABLE", stockQty: 0, purchaseRate: 0, saleRate: 25.00, department: "Logistics", class: "Fees" },
     }),
     prisma.item.upsert({
       where: { name: "DELL-POWEREDGE-R750" },
       update: {},
-      create: { name: "DELL-POWEREDGE-R750", displayName: "Dell PowerEdge R750 Server", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 5, reorderPoint: 3, warehouseId: secondaryWarehouse.id, department: "Servers", class: "Hardware" },
+      create: { name: "DELL-POWEREDGE-R750", displayName: "Dell PowerEdge R750 Server", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 5, reorderPoint: 3, warehouseId: secondaryWarehouse.id, purchaseRate: 3200.00, saleRate: 4500.00, department: "Servers", class: "Hardware" },
     }),
     prisma.item.upsert({
       where: { name: "OFFICE-CHAIR-EXEC" },
       update: {},
-      create: { name: "OFFICE-CHAIR-EXEC", displayName: "Executive Office Chair", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 20, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Furniture", class: "Office" },
+      create: { name: "OFFICE-CHAIR-EXEC", displayName: "Executive Office Chair", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 20, reorderPoint: 5, warehouseId: mainWarehouse.id, purchaseRate: 350.00, saleRate: 550.00, department: "Furniture", class: "Office" },
     }),
   ]);
 

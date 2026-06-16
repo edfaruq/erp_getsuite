@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ItemForm, ItemFormVariant } from "@/components/inventory/ItemForm";
+import { useToastStore } from "@/store/toast.store";
 
 const TITLES: Record<ItemFormVariant, { title: string; description: string }> = {
   INVENTORY: {
@@ -30,6 +31,7 @@ function NewItemContent() {
   const searchParams = useSearchParams();
   const variant = parseVariant(searchParams.get("type"));
   const meta = TITLES[variant];
+  const showToast = useToastStore((s) => s.showToast);
 
   const handleSubmit = async (data: Record<string, unknown>) => {
     const res = await fetch("/api/inventory/items", {
@@ -37,7 +39,13 @@ function NewItemContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) router.push("/items");
+    if (res.ok) {
+      showToast("Item created successfully!");
+      router.push("/items");
+    } else {
+      const json = await res.json();
+      showToast(json.error ?? "Failed to create item", "error");
+    }
   };
 
   return (

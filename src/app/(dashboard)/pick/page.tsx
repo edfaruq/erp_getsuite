@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FulfillmentOrderCard } from "@/components/inventory/FulfillmentOrderCard";
 import { useRoleStore } from "@/store/role.store";
+import { useToastStore } from "@/store/toast.store";
 
 export default function PickPage() {
   const activeRole = useRoleStore((s) => s.activeRole);
+  const showToast = useToastStore((s) => s.showToast);
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -29,9 +31,12 @@ export default function PickPage() {
     const json = await res.json();
     setProcessing(null);
     if (!res.ok) {
-      setErrors((e) => ({ ...e, [orderId]: json.error ?? "Failed to pick order" }));
+      const msg = json.error ?? "Failed to pick order";
+      setErrors((e) => ({ ...e, [orderId]: msg }));
+      showToast(msg, "error");
       return;
     }
+    showToast("Order picked successfully!");
     fetchOrders();
   };
 

@@ -95,6 +95,10 @@ export async function POST(req: NextRequest) {
     const createdBy = await resolveUserId(actor ?? "INVENTORY_MANAGER");
     const warehouse = await getDefaultWarehouse();
 
+    if (!warehouse) {
+      return NextResponse.json({ error: "No active warehouse configured" }, { status: 400 });
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const line of lines as { itemId: string; counted: number }[]) {
         const existing = session.lines.find((l) => l.itemId === line.itemId);

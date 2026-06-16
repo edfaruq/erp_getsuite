@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const item = await prisma.item.create({
       data: {
         ...rest,
-        warehouseId: createData.itemType === "INVENTORY" ? (warehouse?.id ?? null) : null,
+        warehouseId: warehouse?.id ?? null,
       },
     });
 
@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ data: item }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create item";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

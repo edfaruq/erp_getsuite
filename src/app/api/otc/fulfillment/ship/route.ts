@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
     }
 
     const warehouse = await resolveWarehouse(order.location);
+    if (!warehouse) {
+      return NextResponse.json({ error: "No active warehouse configured" }, { status: 400 });
+    }
 
     for (const line of order.items) {
       if (line.item.itemType !== "INVENTORY") continue;

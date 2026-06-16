@@ -147,6 +147,8 @@ model Item {
   primaryStockUnit    String?
   primaryPurchaseUnit String?
   primarySaleUnit     String?
+  purchaseRate        Decimal? @db.Decimal(12, 2)
+  saleRate            Decimal? @db.Decimal(12, 2)
   cogsAccount         String?
   assetAccount        String?
   incomeAccount       String?

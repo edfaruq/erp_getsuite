@@ -25,6 +25,8 @@ const baseSchema = z.object({
   stockQty: z.coerce.number().optional(),
   reorderPoint: z.coerce.number().optional(),
   warehouseId: z.string().optional(),
+  purchaseRate: z.coerce.number().nullable().optional(),
+  saleRate: z.coerce.number().nullable().optional(),
   cogsAccount: z.string().optional(),
   assetAccount: z.string().optional(),
   incomeAccount: z.string().optional(),
@@ -76,6 +78,8 @@ export function ItemForm({ variant, mode = "create", onSubmit, defaultValues }: 
       primaryPurchaseUnit: "Each",
       primarySaleUnit: "Each",
       location: "Main Warehouse",
+      purchaseRate: 0,
+      saleRate: 0,
       ...defaultValues,
     },
   });
@@ -200,6 +204,13 @@ export function ItemForm({ variant, mode = "create", onSubmit, defaultValues }: 
             <option value="TAXABLE">Taxable</option>
             <option value="NON_TAXABLE">Non-Taxable</option>
           </select>
+        </Field>
+
+        <Field label="Purchase Rate">
+          <Input type="number" step="0.01" min={0} {...register("purchaseRate")} placeholder="0.00" />
+        </Field>
+        <Field label="Sale Rate">
+          <Input type="number" step="0.01" min={0} {...register("saleRate")} placeholder="0.00" />
         </Field>
       </div>
 
