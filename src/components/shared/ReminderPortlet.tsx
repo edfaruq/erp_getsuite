@@ -29,6 +29,8 @@ const ROLE_REMINDER_CONFIG: Record<AppRole, ReminderConfig[]> = {
     { id: "pack", label: "Orders to Pack", query: "/api/otc/sales-orders?status=PICKING", href: ROUTES.pack },
     { id: "ship", label: "Orders to Ship", query: "/api/otc/sales-orders?status=PACKING", href: ROUTES.ship },
     { id: "receive", label: "POs to Receive", query: "/api/ptp/purchase-orders?status=PENDING_RECEIPT", href: ROUTES.receive, priority: "medium" },
+    { id: "low-stock", label: "Low Stock Items", query: "/api/inventory/items?lowStock=true", href: ROUTES.analyzeInventory, priority: "high" },
+    { id: "count-variance", label: "Count Variances", query: "/api/inventory/reports/worksheet-variances", href: ROUTES.physicalWorksheet, priority: "medium" },
   ],
   AR_ANALYST: [
     { id: "invoice", label: "Sales Orders to Invoice", query: "/api/otc/sales-orders?status=SHIPPED", href: ROUTES.invoices, priority: "high" },

@@ -76,6 +76,11 @@ enum VendorBillStatus {
   PAID
 }
 
+enum PhysicalCountStatus {
+  DRAFT
+  SUBMITTED
+}
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 model User {
@@ -98,9 +103,33 @@ model User {
   receiptsCreated         ItemReceipt[]
   adjustmentsCreated      InventoryAdjustment[]
   transfersCreated        InventoryTransfer[]
+  physicalCountsCreated   PhysicalCountSession[]
 }
 
 // ─── Item Management ─────────────────────────────────────────────────────────
+
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  stocks WarehouseStock[]
+  items  Item[]
+}
+
+model WarehouseStock {
+  id          String @id @default(cuid())
+  warehouseId String
+  itemId      String
+  qty         Int    @default(0)
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  item      Item      @relation(fields: [itemId], references: [id])
+
+  @@unique([warehouseId, itemId])
+}
 
 model Item {
   id            String        @id @default(cuid())
@@ -111,16 +140,61 @@ model Item {
   unitType      String        @default("Each")
   taxSchedule   TaxSchedule   @default(TAXABLE)
   stockQty      Int           @default(0)
-  department    String?
-  class         String?
+  reorderPoint        Int     @default(5)
+  warehouseId         String?
+  vendorName          String?
+  location            String?
+  primaryStockUnit    String?
+  primaryPurchaseUnit String?
+  primarySaleUnit     String?
+  cogsAccount         String?
+  assetAccount        String?
+  incomeAccount       String?
+  expenseAccount      String?
+  department          String?
+  class               String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  warehouse          Warehouse?           @relation(fields: [warehouseId], references: [id])
   salesOrderItems    SalesOrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
   adjustments        InventoryAdjustment[]
   transfers          InventoryTransfer[]
   receipts           ItemReceipt[]
+  warehouseStocks    WarehouseStock[]
+  physicalCountLines PhysicalCountLine[]
+}
+
+model PhysicalCountSession {
+  id          String              @id @default(cuid())
+  status      PhysicalCountStatus @default(DRAFT)
+  createdBy   String
+  submittedAt DateTime?
+  createdAt   DateTime            @default(now())
+
+  creator User                @relation(fields: [createdBy], references: [id])
+  lines   PhysicalCountLine[]
+}
+
+model PhysicalCountLine {
+  id        String @id @default(cuid())
+  sessionId String
+  itemId    String
+  onHand    Int
+  counted   Int
+  variance  Int
+
+  session PhysicalCountSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  item    Item                 @relation(fields: [itemId], references: [id])
+
+  @@unique([sessionId, itemId])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
 }
 
 model Vendor {

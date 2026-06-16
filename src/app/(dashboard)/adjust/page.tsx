@@ -22,7 +22,7 @@ export default function AdjustPage() {
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
 
   const fetchData = () => {
-    fetch("/api/inventory/items").then((r) => r.json()).then((d) => setItems(d.data ?? []));
+    fetch("/api/inventory/items?itemType=INVENTORY").then((r) => r.json()).then((d) => setItems(d.data ?? []));
     fetch("/api/inventory/adjust").then((r) => r.json()).then((d) => setAdjustments(d.data ?? []));
   };
 

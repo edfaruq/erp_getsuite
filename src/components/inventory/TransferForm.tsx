@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,16 +24,29 @@ interface TransferFormProps {
 }
 
 export function TransferForm({ items, onSubmit }: TransferFormProps) {
+  const [warehouses, setWarehouses] = useState<{ name: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/inventory/warehouses")
+      .then((r) => r.json())
+      .then((d) => setWarehouses((d.data ?? []).filter((w: { isActive: boolean }) => w.isActive)));
+  }, []);
+
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { fromLocation: "Main Warehouse", toLocation: "Secondary Warehouse" },
+    defaultValues: {
+      fromLocation: "Main Warehouse",
+      toLocation: "Secondary Warehouse",
+    },
   });
+
+  const selectClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-lg">
       <div className="space-y-2">
         <Label>Item</Label>
-        <select {...register("itemId")} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+        <select {...register("itemId")} className={selectClass}>
           <option value="">Select item...</option>
           {items.map((i) => (
             <option key={i.id} value={i.id}>{i.displayName} (On Hand: {i.stockQty})</option>
@@ -42,11 +56,27 @@ export function TransferForm({ items, onSubmit }: TransferFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>From Location</Label>
-          <Input {...register("fromLocation")} />
+          {warehouses.length > 0 ? (
+            <select {...register("fromLocation")} className={selectClass}>
+              {warehouses.map((w) => (
+                <option key={w.name} value={w.name}>{w.name}</option>
+              ))}
+            </select>
+          ) : (
+            <Input {...register("fromLocation")} />
+          )}
         </div>
         <div className="space-y-2">
           <Label>To Location</Label>
-          <Input {...register("toLocation")} />
+          {warehouses.length > 0 ? (
+            <select {...register("toLocation")} className={selectClass}>
+              {warehouses.map((w) => (
+                <option key={w.name} value={w.name}>{w.name}</option>
+              ))}
+            </select>
+          ) : (
+            <Input {...register("toLocation")} />
+          )}
         </div>
       </div>
       <div className="space-y-2">

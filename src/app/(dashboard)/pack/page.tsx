@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { FulfillmentCard } from "@/components/otc/FulfillmentCard";
+import { FulfillmentOrderCard } from "@/components/inventory/FulfillmentOrderCard";
 import { useRoleStore } from "@/store/role.store";
 
 export default function PackPage() {
@@ -34,9 +34,9 @@ export default function PackPage() {
       {loading ? <p className="text-muted-foreground">Loading...</p> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {orders.length === 0 ? <p className="text-muted-foreground col-span-full">No orders to pack.</p> : orders.map((o) => (
-            <FulfillmentCard
+            <FulfillmentOrderCard
               key={String(o.id)}
-              order={o as { id: string; orderNumber: string; customer?: { name: string }; date: string; status: string }}
+              order={o as Parameters<typeof FulfillmentOrderCard>[0]["order"]}
               actionLabel="Pack Order"
               onAction={handlePack}
               loading={processing === String(o.id)}

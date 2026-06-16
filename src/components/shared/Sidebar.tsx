@@ -6,7 +6,7 @@ import {
   ShoppingCart, Plus, CheckCircle, Package, Archive, Truck, Download,
   Box, RefreshCw, ArrowLeftRight, BarChart, BarChart2, FileText, DollarSign,
   ClipboardList, Receipt, LayoutDashboard, Users, PlusSquare, TrendingUp,
-  TrendingDown, Settings, Settings2,
+  TrendingDown, Settings, Settings2, Warehouse,
 } from "lucide-react";
 import { useRoleStore } from "@/store/role.store";
 import { getMenuForRole } from "@/constants/roleMenus";
@@ -18,7 +18,7 @@ const ICON_MAP: Record<MenuIcon, React.ComponentType<{ className?: string }>> = 
   ShoppingCart, Plus, CheckCircle, Package, Archive, Truck, Download,
   Box, RefreshCw, ArrowLeftRight, BarChart, BarChart2, FileText, DollarSign,
   ClipboardList, Receipt, LayoutDashboard, Users, PlusSquare, TrendingUp,
-  TrendingDown, Settings, Settings2,
+  TrendingDown, Settings, Settings2, Warehouse,
 };
 
 function menuPath(href: string) {

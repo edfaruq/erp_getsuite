@@ -114,27 +114,39 @@ async function main() {
 
   const [appleStore, bistElectronics] = vendors;
 
+  // Warehouses
+  const mainWarehouse = await prisma.warehouse.upsert({
+    where: { code: "MAIN" },
+    update: {},
+    create: { name: "Main Warehouse", code: "MAIN", isActive: true },
+  });
+  const secondaryWarehouse = await prisma.warehouse.upsert({
+    where: { code: "SEC" },
+    update: {},
+    create: { name: "Secondary Warehouse", code: "SEC", isActive: true },
+  });
+
   // Items
   const items = await Promise.all([
     prisma.item.upsert({
       where: { name: "IPAD-PRO-97-32GB" },
       update: {},
-      create: { name: "IPAD-PRO-97-32GB", displayName: "iPad Pro 9.7 inch - 32GB", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 45, department: "Electronics", class: "Tablets" },
+      create: { name: "IPAD-PRO-97-32GB", displayName: "iPad Pro 9.7 inch - 32GB", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 45, reorderPoint: 10, warehouseId: mainWarehouse.id, department: "Electronics", class: "Tablets" },
     }),
     prisma.item.upsert({
       where: { name: "BROCADE-7800-SW" },
       update: {},
-      create: { name: "BROCADE-7800-SW", displayName: "Brocade 7800 Extension Switch", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 12, department: "Networking", class: "Switches" },
+      create: { name: "BROCADE-7800-SW", displayName: "Brocade 7800 Extension Switch", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 12, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Networking", class: "Switches" },
     }),
     prisma.item.upsert({
       where: { name: "MACBOOK-PRO-M3" },
       update: {},
-      create: { name: "MACBOOK-PRO-M3", displayName: "MacBook Pro 14\" M3", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 28, department: "Electronics", class: "Laptops" },
+      create: { name: "MACBOOK-PRO-M3", displayName: "MacBook Pro 14\" M3", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 28, reorderPoint: 8, warehouseId: mainWarehouse.id, department: "Electronics", class: "Laptops" },
     }),
     prisma.item.upsert({
       where: { name: "CISCO-2960-SW" },
       update: {},
-      create: { name: "CISCO-2960-SW", displayName: "Cisco Catalyst 2960 Switch", itemType: "INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 8, department: "Networking", class: "Switches" },
+      create: { name: "CISCO-2960-SW", displayName: "Cisco Catalyst 2960 Switch", itemType: "INVENTORY", costingMethod: "STANDARD", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 3, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Networking", class: "Switches" },
     }),
     prisma.item.upsert({
       where: { name: "IT-CONSULT-HR" },
@@ -149,16 +161,26 @@ async function main() {
     prisma.item.upsert({
       where: { name: "DELL-POWEREDGE-R750" },
       update: {},
-      create: { name: "DELL-POWEREDGE-R750", displayName: "Dell PowerEdge R750 Server", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 5, department: "Servers", class: "Hardware" },
+      create: { name: "DELL-POWEREDGE-R750", displayName: "Dell PowerEdge R750 Server", itemType: "INVENTORY", costingMethod: "FIFO", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 5, reorderPoint: 3, warehouseId: secondaryWarehouse.id, department: "Servers", class: "Hardware" },
     }),
     prisma.item.upsert({
       where: { name: "OFFICE-CHAIR-EXEC" },
       update: {},
-      create: { name: "OFFICE-CHAIR-EXEC", displayName: "Executive Office Chair", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 20, department: "Furniture", class: "Office" },
+      create: { name: "OFFICE-CHAIR-EXEC", displayName: "Executive Office Chair", itemType: "INVENTORY", costingMethod: "AVERAGE", unitType: "Each", taxSchedule: "TAXABLE", stockQty: 20, reorderPoint: 5, warehouseId: mainWarehouse.id, department: "Furniture", class: "Office" },
     }),
   ]);
 
-  const [ipad, brocade, macbook] = items;
+  const inventoryItems = items.filter((i) => i.itemType === "INVENTORY");
+  for (const item of inventoryItems) {
+    const warehouseId = item.warehouseId ?? mainWarehouse.id;
+    await prisma.warehouseStock.upsert({
+      where: { warehouseId_itemId: { warehouseId, itemId: item.id } },
+      update: { qty: item.stockQty },
+      create: { warehouseId, itemId: item.id, qty: item.stockQty },
+    });
+  }
+
+  const [ipad, brocade, macbook, cisco] = items;
 
   // Sales Order 1 — PENDING_APPROVAL
   const so1 = await prisma.salesOrder.upsert({
@@ -259,17 +281,33 @@ async function main() {
     },
   });
 
-  // Invoice for SO-10002 (shipped order scenario — we'll set SO2 to SHIPPED for demo)
-  await prisma.salesOrder.update({
-    where: { id: so2.id },
-    data: { status: "SHIPPED" },
+  // Sales Order 3 — SHIPPED/INVOICED (completed OTC path for A/R demo)
+  const so3 = await prisma.salesOrder.upsert({
+    where: { orderNumber: "SO-10003" },
+    update: {},
+    create: {
+      orderNumber: "SO-10003",
+      customerId: zenith.id,
+      date: new Date("2025-05-18"),
+      location: "Main Warehouse",
+      currency: "USD",
+      memo: "Completed order for A/R aging demo",
+      status: "SHIPPED",
+      createdBy: salesRep.id,
+      approvedBy: salesManager.id,
+      items: {
+        create: [
+          { itemId: cisco.id, dept: "Networking", class: "Switches", priceLevel: "Standard", rate: 3200.00, quantity: 1, taxCode: "TAX-US", amount: 3200.00 },
+        ],
+      },
+    },
   });
 
   await prisma.itemFulfillment.createMany({
     data: [
-      { salesOrderId: so2.id, status: "PICKED", createdBy: inventoryMgr.id },
-      { salesOrderId: so2.id, status: "PACKED", createdBy: inventoryMgr.id },
-      { salesOrderId: so2.id, status: "SHIPPED", createdBy: inventoryMgr.id },
+      { salesOrderId: so3.id, status: "PICKED", createdBy: inventoryMgr.id },
+      { salesOrderId: so3.id, status: "PACKED", createdBy: inventoryMgr.id },
+      { salesOrderId: so3.id, status: "SHIPPED", createdBy: inventoryMgr.id },
     ],
     skipDuplicates: true,
   });
@@ -279,19 +317,19 @@ async function main() {
     update: {},
     create: {
       invoiceNumber: "INV-30001",
-      salesOrderId: so2.id,
-      customerId: bain.id,
+      salesOrderId: so3.id,
+      customerId: zenith.id,
       date: new Date("2025-05-25"),
       dueDate: new Date("2025-06-25"),
-      subtotal: 25000.00,
-      total: 25000.00,
+      subtotal: 3200.00,
+      total: 3200.00,
       status: "OPEN",
       createdBy: arAnalyst.id,
     },
   });
 
   await prisma.salesOrder.update({
-    where: { id: so2.id },
+    where: { id: so3.id },
     data: { status: "INVOICED" },
   });
 
