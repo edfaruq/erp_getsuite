@@ -6,6 +6,7 @@ import { SalesOrderTable } from "@/components/otc/SalesOrderTable";
 import { Button } from "@/components/ui/button";
 import { useSalesOrders } from "@/hooks/otc/useSalesOrders";
 import { useRoleStore } from "@/store/role.store";
+import { SalesOrder } from "@/types/otc.types";
 
 export default function ApprovalsPage() {
   const activeRole = useRoleStore((s) => s.activeRole);
@@ -23,21 +24,21 @@ export default function ApprovalsPage() {
     refetch();
   };
 
+  const renderActions = (order: SalesOrder) => (
+    <>
+      <Button size="sm" onClick={() => handleAction(order.id, "approve")} disabled={processing === order.id}>
+        Approve
+      </Button>
+      <Button size="sm" variant="destructive" onClick={() => handleAction(order.id, "reject")} disabled={processing === order.id}>
+        Reject
+      </Button>
+    </>
+  );
+
   return (
     <div>
       <PageHeader title="Sales Order Approvals" description="Review and approve or reject pending sales orders." />
-      <SalesOrderTable orders={orders} loading={loading} />
-      {orders.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {orders.map((o) => (
-            <div key={o.id} className="flex items-center gap-2 p-3 border rounded-lg">
-              <span className="text-sm font-medium flex-1">{o.orderNumber} — {o.customerName}</span>
-              <Button size="sm" onClick={() => handleAction(o.id, "approve")} disabled={processing === o.id}>Approve</Button>
-              <Button size="sm" variant="destructive" onClick={() => handleAction(o.id, "reject")} disabled={processing === o.id}>Reject</Button>
-            </div>
-          ))}
-        </div>
-      )}
+      <SalesOrderTable orders={orders} loading={loading} renderActions={renderActions} />
     </div>
   );
 }

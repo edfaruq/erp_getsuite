@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUserId } from "@/lib/actor";
+import { canTransitionOTC } from "@/constants/status";
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
       where: { id: salesOrderId },
       include: { items: true },
     });
-    if (!order || order.status !== "SHIPPED") {
+    if (!order) return NextResponse.json({ error: "Sales order not found" }, { status: 404 });
+    if (!canTransitionOTC(order.status as never, "INVOICED")) {
       return NextResponse.json({ error: "Order must be SHIPPED to invoice" }, { status: 400 });
     }
     const subtotal = order.items.reduce((sum, i) => sum + Number(i.amount), 0);

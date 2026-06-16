@@ -9,9 +9,10 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 interface SalesOrderTableProps {
   orders: SalesOrder[];
   loading?: boolean;
+  renderActions?: (order: SalesOrder) => React.ReactNode;
 }
 
-export function SalesOrderTable({ orders, loading }: SalesOrderTableProps) {
+export function SalesOrderTable({ orders, loading, renderActions }: SalesOrderTableProps) {
   const columns: Column<SalesOrder>[] = [
     {
       key: "orderNumber",
@@ -37,6 +38,18 @@ export function SalesOrderTable({ orders, loading }: SalesOrderTableProps) {
         return formatCurrency(total, row.currency);
       },
     },
+    ...(renderActions
+      ? [{
+          key: "actions",
+          header: "Actions",
+          className: "text-right whitespace-nowrap",
+          render: (row: SalesOrder) => (
+            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+              {renderActions(row)}
+            </div>
+          ),
+        }]
+      : []),
   ];
 
   if (loading) return <div className="text-muted-foreground text-sm py-8 text-center">Loading sales orders...</div>;
