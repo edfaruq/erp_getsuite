@@ -62,6 +62,9 @@ export const ROLE_MENUS: Record<AppRole, MenuItem[]> = {
     { label: "Transfer Inventory", href: ROUTES.transfer, icon: "ArrowLeftRight" },
     { label: "Physical Worksheet", href: ROUTES.physicalWorksheet, icon: "ClipboardList" },
     { label: "KPI & Reminders", href: ROUTES.inventoryKpi, icon: "BarChart" },
+    { label: "Sales by Item", href: ROUTES.salesByItems, icon: "TrendingUp" },
+    { label: "Purchase by Items", href: ROUTES.purchaseByItems, icon: "TrendingDown" },
+    { label: "Analyze Inventory", href: ROUTES.analyzeInventory, icon: "BarChart2" },
   ],
   AR_ANALYST: [
     COMMON_DASHBOARD,
